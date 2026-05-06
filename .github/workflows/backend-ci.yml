@@ -1,4 +1,4 @@
-name: Backend CI
+name: Backend CI/CD
 
 on:
   push:
@@ -18,15 +18,22 @@ jobs:
       JWT_SECRET: test_secret
       PORT: 5000
 
+    permissions:
+      contents: read
+      packages: write
+
     services:
       postgres:
         image: postgres:15
+
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: ticketing_db
+
         ports:
           - 5432:5432
+
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-interval=10s
@@ -59,5 +66,17 @@ jobs:
           curl --fail http://localhost:5000
           kill $SERVER_PID
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Docker image
-        run: docker build -t ticketing-backend .
+        run: |
+          docker build -t ghcr.io/ismailourakh/ticketing-backend:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/ismailourakh/ticketing-backend:latest
