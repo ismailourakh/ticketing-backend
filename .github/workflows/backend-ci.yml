@@ -58,3 +58,6 @@ jobs:
           sleep 10
           curl --fail http://localhost:5000
           kill $SERVER_PID
+
+      - name: Build Docker image
+        run: docker build -t ticketing-backend .
