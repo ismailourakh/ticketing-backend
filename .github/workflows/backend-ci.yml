@@ -14,8 +14,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ticketing_db"
-      JWT_SECRET: "test_secret"
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ticketing_db
+      JWT_SECRET: test_secret
+      PORT: 5000
 
     services:
       postgres:
@@ -26,7 +27,6 @@ jobs:
           POSTGRES_DB: ticketing_db
         ports:
           - 5432:5432
-
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-interval=10s
@@ -48,8 +48,13 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Run Prisma migrations
+      - name: Run database migrations
         run: npx prisma migrate deploy
 
-      - name: Start backend check
-        run: node server.js
+      - name: Validate backend startup
+        run: |
+          node server.js &
+          SERVER_PID=$!
+          sleep 10
+          curl --fail http://localhost:5000
+          kill $SERVER_PID
