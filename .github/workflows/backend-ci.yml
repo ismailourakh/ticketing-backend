@@ -18,22 +18,15 @@ jobs:
       JWT_SECRET: test_secret
       PORT: 5000
 
-    permissions:
-      contents: read
-      packages: write
-
     services:
       postgres:
         image: postgres:15
-
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: ticketing_db
-
         ports:
           - 5432:5432
-
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-interval=10s
@@ -63,20 +56,28 @@ jobs:
           node server.js &
           SERVER_PID=$!
           sleep 10
-          curl --fail http://localhost:5000
+          curl --fail http://localhost:5000/health
           kill $SERVER_PID
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build Docker image
-        run: |
-          docker build -t ghcr.io/ismailourakh/ticketing-backend:latest .
+        run: docker build -t ticketing-backend .
 
-      - name: Push Docker image
-        run: |
-          docker push ghcr.io/ismailourakh/ticketing-backend:latest
+      - name: Configure AWS credentials
+        if: github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        if: github.event_name == 'push'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag Docker image for ECR
+        if: github.event_name == 'push'
+        run: docker tag ticketing-backend:latest ${{ secrets.ECR_REPOSITORY_URI }}:latest
+
+      - name: Push Docker image to ECR
+        if: github.event_name == 'push'
+        run: docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
