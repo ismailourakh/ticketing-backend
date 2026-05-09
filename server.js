@@ -28,6 +28,12 @@ app.get("/api/protected", authMiddleware, (req, res) => {
     user: req.user,
   });
 });
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "ticketing-backend",
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
