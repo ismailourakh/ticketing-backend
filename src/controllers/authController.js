@@ -1,6 +1,11 @@
-const prisma = require("../config/prisma");
+const { getPrisma } = require("../config/prisma");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
+const prisma = getPrisma();
+if (!prisma) {
+  return res.status(503).json({ error: "Database not configured" });
+}
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

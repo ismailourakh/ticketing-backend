@@ -1,4 +1,8 @@
-const prisma = require("../config/prisma");
+const { getPrisma } = require("../config/prisma");const prisma = getPrisma();
+
+if (!prisma) {
+  return res.status(503).json({ error: "Database not configured" });
+}
 
 exports.createEvent = async (req, res) => {
   try {

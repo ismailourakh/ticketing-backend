@@ -1,5 +1,9 @@
-const prisma = require("../config/prisma");
+const { getPrisma } = require("../config/prisma");
 
+const prisma = getPrisma();
+if (!prisma) {
+  return res.status(503).json({ error: "Database not configured" });
+}
 
 // post reserve ticket api
 exports.reserveTicket = async (req, res) => {

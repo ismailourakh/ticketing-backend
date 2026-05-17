@@ -3,21 +3,20 @@ require("dotenv").config();
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
+let prisma = null;
 
-const prisma = new PrismaClient({
-  adapter,
-});
+function getPrisma() {
+  if (prisma) return prisma;
 
-async function main() {
-  const users = await prisma.user.findMany();
-  console.log(users);
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    return null;
+  }
+
+  const adapter = new PrismaPg({ connectionString: url });
+  prisma = new PrismaClient({ adapter });
+
+  return prisma;
 }
 
-main()
-  .catch(console.error)
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+module.exports = { getPrisma };
